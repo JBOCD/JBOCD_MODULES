@@ -13,7 +13,6 @@ from apiclient.discovery import build
 from apiclient.http import MediaFileUpload
 from apiclient import errors
 
-
 def PrintHelp():
     print "Python Google Drive Uploader"
     print "usage: python put.py [access token] [local file path] [remote file path]"

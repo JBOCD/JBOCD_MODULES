@@ -1,0 +1,17 @@
+{
+	"dir":"dropbox",
+	"name":"Dropbox",
+	"icon":"fa-dropbox",
+	"isFA":1,
+	"version":1.1,
+	"SQL":
+		[
+			"DROP TABLE IF EXISTS `dropbox`",
+			"DELETE FROM `clouddrive` WHERE `lid` IN (SELECT `id` FROM `libraries` WHERE `dir` = 'dropbox')",
+			"CREATE TABLE IF NOT EXISTS `dropbox`(`id` int(11) NOT NULL,`name` varchar(255) DEFAULT NULL,`key` varchar(255) DEFAULT NULL,`userid` varchar(255) DEFAULT NULL,`status` int(11) DEFAULT NULL,`timestamp` TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL,PRIMARY KEY (`id`),UNIQUE KEY `userid` (`userid`)) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=20"
+		],
+	"script":
+		[
+			"pip install dropbox"
+		]
+}
