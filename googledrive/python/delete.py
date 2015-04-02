@@ -51,33 +51,55 @@ else:
     http = credentials.authorize(http)
     drive = build('drive', 'v2', http=http)
 
-    root = drive.about().get().execute()['rootFolderId']
-    str = sys.argv[2]
-    cur = root
-    strsplt = str[1:].split('/')
-    filename = strsplt[len(strsplt)-1]
+    try:
+        root = drive.about().get().execute()['rootFolderId']
+        str = sys.argv[2]
+        cur = root
+        strsplt = str[1:].split('/')
+        filename = strsplt[len(strsplt)-1]
 
-    if len(strsplt) > 1:
-        for folder in strsplt:
-            param = {}
-            param['pageToken'] = cur
-            childrens = drive.children().list(folderId=cur).execute()
-            for item in childrens['items']:
-                sitem = drive.files().get(fileId=item['id']).execute()
-                if sitem["labels"]["trashed"] == False and sitem["mimeType"] == "application/vnd.google-apps.folder":
-                    if sitem["title"]==folder:
-                        cur = item['id']
-                        break
+        if len(strsplt) > 1:
+            for folder in strsplt:
+                param = {}
+                param['pageToken'] = cur
+                childrens = drive.children().list(folderId=cur).execute()
+                for item in childrens['items']:
+                    sitem = drive.files().get(fileId=item['id']).execute()
+                    if sitem["labels"]["trashed"] == False and sitem["mimeType"] == "application/vnd.google-apps.folder":
+                        if sitem["title"]==folder:
+                            cur = item['id']
+                            break
 
-        if drive.files().get(fileId=cur).execute()['title'] != strsplt[len(strsplt)-2]:
-            print "Directory not found!"
-            exit(2)
+            if drive.files().get(fileId=cur).execute()['title'] != strsplt[len(strsplt)-2]:
+                print "Directory not found!"
+                exit(2)
 
-    childrens = drive.children().list(folderId=cur).execute()
-    for item in childrens['items']:
-        sitem = drive.files().get(fileId=item['id']).execute()
-        if sitem['title'] == filename:
-            drive.files().delete(fileId=sitem['id']).execute()
-            sys.exit(0)
+        childrens = drive.children().list(folderId=cur).execute()
+        for item in childrens['items']:
+            sitem = drive.files().get(fileId=item['id']).execute()
+            if sitem['title'] == filename:
+                drive.files().delete(fileId=sitem['id']).execute()
+                drive.files().emptyTrash()
+                sys.exit(0)
+    except errors.HttpError, e:
+        #print 'Error: %s' % e
+        try:
+            # Load Json body.
+            error = simplejson.loads(e.content)
+            print 'Error code: %d' % error.get('code')
+            print 'Error message: %d' % error.get('message')
+            sys.exit(error.get('code'))
+
+            # More error information can be retrieved with error.get('errors').
+        except TypeError:
+            # Could not load Json body.
+            print 'HTTP Status code: %d' % e.resp.status
+            print 'HTTP Reason: %s' % e.resp.reason
+            sys.exit(e.resp.status)
+        except ValueError:
+            # Could not load Json body.
+            print 'HTTP Status code: %d' % e.resp.status
+            print 'HTTP Reason: %s' % e.resp.reason
+            sys.exit(e.resp.status)
     
     sys.exit(1)

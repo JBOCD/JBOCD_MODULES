@@ -44,6 +44,9 @@ else:
         response = client.put_file(sys.argv[3], f, True)
     except dropbox.rest.ErrorResponse as e:
         print "Put Error: ", e.error_msg
-        sys.exit(e.status)
+        print "\tStatus: ", e.status
+        print "\tReason: ", e.reason
+        print "\tuser_error_msg: ", e.user_error_msg
+        exit(e.status)
     
     sys.exit(0)

@@ -13,6 +13,7 @@ from apiclient.discovery import build
 from apiclient.http import MediaFileUpload
 from apiclient import errors
 
+
 def PrintHelp():
     print "Python Google Drive Uploader"
     print "usage: python put.py [access token] [local file path] [remote file path]"
@@ -72,34 +73,54 @@ else:
     
     media_body = MediaFileUpload(sys.argv[2], 'application/octet-stream')
 
-    if len(strsplt) > 1:
-        for folder in strsplt:
-            param = {}
-            param['pageToken'] = cur
-            childrens = drive.children().list(folderId=cur).execute()
-            for item in childrens['items']:
-                sitem = drive.files().get(fileId=item['id']).execute()
-                if sitem["labels"]["trashed"] == False and sitem["mimeType"] == "application/vnd.google-apps.folder":
-                    if sitem["title"]==folder:
-                        cur = item['id']
-                        body['parents'] = [{'id': cur}]
-                        break
-
-        if drive.files().get(fileId=cur).execute()['title'] != strsplt[len(strsplt)-2]:
-            print "Directory not found!"
-            exit(2)
-    
-    childrens = drive.children().list(folderId=cur).execute()
-    for item in childrens['items']:
-        sitem = drive.files().get(fileId=item['id']).execute()
-        if sitem['title'] == filename:
-            drive.files().update(fileId=sitem['id'], body=body, media_body=media_body, newRevision=True).execute()
-            print "Updated"
-            sys.exit(0)
-            
     try:
+        if len(strsplt) > 1:
+            for folder in strsplt:
+                param = {}
+                param['pageToken'] = cur
+                childrens = drive.children().list(folderId=cur).execute()
+                for item in childrens['items']:
+                    sitem = drive.files().get(fileId=item['id']).execute()
+                    if sitem["labels"]["trashed"] == False and sitem["mimeType"] == "application/vnd.google-apps.folder":
+                        if sitem["title"]==folder:
+                            cur = item['id']
+                            body['parents'] = [{'id': cur}]
+                            break
+
+            if drive.files().get(fileId=cur).execute()['title'] != strsplt[len(strsplt)-2]:
+                print "Directory not found!"
+                exit(2)
+        
+        childrens = drive.children().list(folderId=cur).execute()
+        for item in childrens['items']:
+            sitem = drive.files().get(fileId=item['id']).execute()
+            if sitem['title'] == filename:
+                drive.files().update(fileId=sitem['id'], body=body, media_body=media_body, newRevision=True).execute()
+                print "Updated"
+                sys.exit(0)
+                
+        
         drive.files().insert(body=body, media_body=media_body).execute()
     except errors.HttpError, e:
-        print 'Error: %s' % e
+        #print 'Error: %s' % e
+        try:
+            # Load Json body.
+            error = simplejson.loads(e.content)
+            print 'Error code: %d' % error.get('code')
+            print 'Error message: %d' % error.get('message')
+            sys.exit(error.get('code'))
+
+            # More error information can be retrieved with error.get('errors').
+        except TypeError:
+            # Could not load Json body.
+            print 'HTTP Status code: %d' % e.resp.status
+            print 'HTTP Reason: %s' % e.resp.reason
+            sys.exit(e.resp.status)
+        except ValueError:
+            # Could not load Json body.
+            print 'HTTP Status code: %d' % e.resp.status
+            print 'HTTP Reason: %s' % e.resp.reason
+            sys.exit(e.resp.status)
+
     
 sys.exit(0)

@@ -43,10 +43,10 @@ else:
     try:
         response = client.file_delete(sys.argv[2])
     except dropbox.rest.ErrorResponse as e:
-        if e.status == 404:
-            print "Delete Error: File not found!"
-        else:
-            print "Delete Error: ", e.error_msg
-        exit(e.status)
+        print "Delete Error: ", e.error_msg
+        print "\tStatus: ", e.status
+        print "\tReason: ", e.reason
+        print "\tuser_error_msg: ", e.user_error_msg
+        exit(e.status)  
     
     sys.exit(0)
