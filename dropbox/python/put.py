@@ -38,15 +38,21 @@ else:
 
     #print 'linked account: ', client.account_info()
 
+
+
     # Open file
     f = open(sys.argv[2], 'rb')
     try:
-        response = client.put_file(sys.argv[3], f, True)
+    	try:
+    		client.file_create_folder("/".join(sys.argv[3][1:].split("/")[:-1]))
+    	except dropbox.rest.ErrorResponse as e:
+    		pass
+    	response = client.put_file(sys.argv[3], f, True)
     except dropbox.rest.ErrorResponse as e:
         print "Put Error: ", e.error_msg
         print "\tStatus: ", e.status
         print "\tReason: ", e.reason
         print "\tuser_error_msg: ", e.user_error_msg
-        exit(e.status)
+        sys.exit(e.status)
     
     sys.exit(0)

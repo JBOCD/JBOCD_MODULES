@@ -47,6 +47,6 @@ else:
         out.close()
     except dropbox.rest.ErrorResponse as e:
         print "Put Error: ", e.error_msg
-        exit(1)
+        sys.exit(e.status)
     
     sys.exit(0)

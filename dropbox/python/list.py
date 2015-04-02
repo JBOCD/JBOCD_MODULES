@@ -97,7 +97,7 @@ else:
         meta = client.metadata(rdir)
     except dropbox.rest.ErrorResponse as e:
         print "Fetch Error: ", e.error_msg
-        exit(1)
+        sys.exit(1)
 
     dir_list = {}
     for content in meta['contents']:

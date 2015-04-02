@@ -13,7 +13,6 @@ from apiclient.discovery import build
 from apiclient.http import MediaFileUpload
 from apiclient import errors
 
-
 def PrintHelp():
     print "Python Google Drive Uploader"
     print "usage: python put.py [access token] [local file path] [remote file path]"
@@ -46,61 +45,65 @@ else:
     REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
     SCOPES = ['https://www.googleapis.com/auth/drive']
 
+
     at = simplejson.loads(sys.argv[1])
+
     h = httplib2.Http()
     d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
     resp, content = h.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
-    
+
+    #gauth = GoogleAuth()
     credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
+
+    #drive = GoogleDrive(gauth)
+
+    #file_list = drive.ListFile({'q': "'root' in parents"}).GetList()
     
+    #print file_list
 
     http = httplib2.Http()
     http = credentials.authorize(http)
     drive = build('drive', 'v2', http=http)
 
-    root = drive.about().get().execute()['rootFolderId']
-    str = sys.argv[3]
-    cur = root
-    strsplt = str[1:].split('/')
+    #root = drive.about().get().execute()['rootFolderId']
+    #str = sys.argv[3]
+    #cur = root
+    strsplt = sys.argv[3][1:].split('/')[:]
     filename = strsplt[len(strsplt)-1]
+    strsplt = strsplt[:-1]
+    cur_dir_id = 'root';
+    
 
-    #mt = mt.guess_type(sys.argv[2])[0]
+    for p in strsplt:
+        param = {'q': "title = '%s' and '%s' in parents" % (p, cur_dir_id), 'fields':'items'}
+        files = drive.files().list(**param).execute()
+        #file_list = drive.ListFile({'fields':'items','q': "title = '%s' and '%s' in parents" % (p, cur_dir_id)}).GetList()
+        if len(files['items']) == 0:
+            d = drive.files().insert(body={'title': p, "mimeType": "application/vnd.google-apps.folder", 'parents':[{'id': cur_dir_id}]}).execute()
+            cur_dir_id = d['id']
+        else:
+            cur_dir_id = files['items'][0]['id']
+
+    mt = mt.guess_type(sys.argv[2])[0]
     body = {
         'title': filename,
-        'description': "Uploaded by python-jbocd"#,
+        'description': "Uploaded by python-jbocd",
+        'parents':[{'id': cur_dir_id}]
         #'mimeType' : mt
     }
     
     media_body = MediaFileUpload(sys.argv[2], 'application/octet-stream')
 
     try:
-        if len(strsplt) > 1:
-            for folder in strsplt:
-                param = {}
-                param['pageToken'] = cur
-                childrens = drive.children().list(folderId=cur).execute()
-                for item in childrens['items']:
-                    sitem = drive.files().get(fileId=item['id']).execute()
-                    if sitem["labels"]["trashed"] == False and sitem["mimeType"] == "application/vnd.google-apps.folder":
-                        if sitem["title"]==folder:
-                            cur = item['id']
-                            body['parents'] = [{'id': cur}]
-                            break
-
-            if drive.files().get(fileId=cur).execute()['title'] != strsplt[len(strsplt)-2]:
-                print "Directory not found!"
-                exit(2)
+        param = {'q': "title = '%s' and '%s' in parents" % (filename, cur_dir_id), 'fields':'items'}
+        files = drive.files().list(**param).execute()
+        if len(files['items']) > 0:
+            print "Updated"
+            drive.files().update(fileId=files['items'][0]['id'], body=body, media_body=media_body, newRevision=True).execute()
+        else:
+            print 'Uploaded'
+            drive.files().insert(body=body, media_body=media_body).execute()
         
-        childrens = drive.children().list(folderId=cur).execute()
-        for item in childrens['items']:
-            sitem = drive.files().get(fileId=item['id']).execute()
-            if sitem['title'] == filename:
-                drive.files().update(fileId=sitem['id'], body=body, media_body=media_body, newRevision=True).execute()
-                print "Updated"
-                sys.exit(0)
-                
-        
-        drive.files().insert(body=body, media_body=media_body).execute()
     except errors.HttpError, e:
         #print 'Error: %s' % e
         try:

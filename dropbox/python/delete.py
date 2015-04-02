@@ -47,6 +47,6 @@ else:
         print "\tStatus: ", e.status
         print "\tReason: ", e.reason
         print "\tuser_error_msg: ", e.user_error_msg
-        exit(e.status)  
+        sys.exit(e.status)  
     
     sys.exit(0)
