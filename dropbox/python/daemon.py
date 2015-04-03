@@ -1,5 +1,5 @@
 from dropboxapi import DropboxAPI
-import sys,json
+import sys,json,thread
 
 gd = DropboxAPI(sys.argv[1], sys.argv[2])
 
@@ -10,11 +10,11 @@ while userinput:
 		opID = current['opID']
 		command = current['command']
 		if command == 'put':
-			print opID, gd.put(current['local'], current['remote'])
+			thread.start_new_thread( gd.put, (current['local'], current['remote'], opID) )
 		elif command == 'get':
-			print opID, gd.get(current['remote'], current['local'])
+			thread.start_new_thread( gd.get, (current['remote'], current['local'], opID) )
 		elif command == 'delete':
-			print opID, gd.delete(current['remote'])
+			thread.start_new_thread( gd.delete, (current['remote'], opID) )
 		userinput = raw_input()
 	except EOFError:
 		sys.exit(0)

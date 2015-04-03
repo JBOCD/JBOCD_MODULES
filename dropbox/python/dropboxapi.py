@@ -33,7 +33,7 @@ class DropboxAPI:
 				dict1[option] = None
 		return dict1
 
-	def put(self, local, remote):
+	def put(self, local, remote, op):
 		try:
 			f = open(local, 'rb')
 			response = self.drop.put_file(self.working_dir + '/' + remote, f, True)
@@ -42,10 +42,11 @@ class DropboxAPI:
 			#print "\tStatus: ", e.status
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
-			return e.status
-		return 0
+			print op, e.status
+			return 0
+		print op, 0
 
-	def get(self, remote, local):
+	def get(self, remote, local, op):
 		try:
 			f, meta = self.drop.get_file_and_metadata(self.working_dir + '/' + remote)
 			out = open(local, 'wb')
@@ -53,10 +54,11 @@ class DropboxAPI:
 			out.close()
 		except dropbox.rest.ErrorResponse as e:
 			#print "Put Error: ", e.error_msg
-			return e.status
-		return 0
+			print op, e.status
+			return 0
+		print op, 0
 
-	def delete(self, remote):
+	def delete(self, remote, op):
 		try:
 			response = self.drop.file_delete(self.working_dir + '/' + remote)
 		except dropbox.rest.ErrorResponse as e:
@@ -64,5 +66,6 @@ class DropboxAPI:
 			#print "\tStatus: ", e.status
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
-			return e.status
-		return 0
+			print op, e.status
+			return 0
+		print op, 0
