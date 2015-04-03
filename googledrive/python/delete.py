@@ -6,6 +6,7 @@ import string
 import ConfigParser
 import httplib2
 import json
+import oauth2client.client
 from urllib import urlencode
 from oauth2client.client import AccessTokenCredentials
 from apiclient.discovery import build
@@ -40,12 +41,21 @@ else:
     SCOPES = ['https://www.googleapis.com/auth/drive']
 
     at = simplejson.loads(sys.argv[1])
-    h = httplib2.Http()
-    d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
-    resp, content = h.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
+    #h = httplib2.Http()
+    #d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
+    #resp, content = h.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
     
-    credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
-    
+    #credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
+    credstr = '{"_module": "oauth2client.client", "token_expiry": null, "access_token": null, "token_uri": null, "invalid": false, "token_response": null, "client_id": "%s", "id_token": null, "client_secret": "%s", "revoke_uri": null, "_class": "AccessTokenCredentials", "refresh_token": "%s", "user_agent": "python-jbocd/1.0"}' % (  CLIENT_ID, CLIENT_SECRET, at['refresh_token'])
+    credentials = AccessTokenCredentials.from_json(credstr)
+    http = httplib2.Http()
+    try:
+        credentials.refresh(http)
+    except oauth2client.client.AccessTokenCredentialsError:
+        print "Refresh needed!"
+        d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
+        resp, content = http.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
+        credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
 
     http = httplib2.Http()
     http = credentials.authorize(http)

@@ -6,6 +6,7 @@ import sys
 import string
 import ConfigParser
 import httplib2
+import oauth2client.client
 
 import json
 from urllib import urlencode
@@ -44,14 +45,25 @@ elif len(sys.argv) < 3 :   print "list.py: Local file path cannot be null. (Argu
 elif len(sys.argv) < 4 :
 #	at = simplejson.loads(sys.argv[1])
 	at = json.loads(sys.argv[1])
-	h =  httplib2.Http()
-	d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
-	resp, content = h.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
-	credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
+	#h =  httplib2.Http()
+	#d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
+	#resp, content = h.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
+	#credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
 	
-	http = httplib2.Http()
-	http = credentials.authorize(http)
-	drive = build('drive', 'v2', http=http)
+	#http = httplib2.Http()
+	#http = credentials.authorize(http)
+	#drive = build('drive', 'v2', http=http)
+	
+	credstr = '{"_module": "oauth2client.client", "token_expiry": null, "access_token": null, "token_uri": null, "invalid": false, "token_response": null, "client_id": "%s", "id_token": null, "client_secret": "%s", "revoke_uri": null, "_class": "AccessTokenCredentials", "refresh_token": "%s", "user_agent": "python-jbocd/1.0"}' % (  CLIENT_ID, CLIENT_SECRET, at['refresh_token'])
+    credentials = AccessTokenCredentials.from_json(credstr)
+    http = httplib2.Http()
+    try:
+        credentials.refresh(http)
+    except oauth2client.client.AccessTokenCredentialsError:
+        print "Refresh needed!"
+        d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
+        resp, content = http.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
+        credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
 	
 	try:
 		list = drive.files().list(q='\'root\' in parents').execute()
