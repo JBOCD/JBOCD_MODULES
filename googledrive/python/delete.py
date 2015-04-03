@@ -57,40 +57,33 @@ else:
         resp, content = http.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
         credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
 
-    http = httplib2.Http()
     http = credentials.authorize(http)
     drive = build('drive', 'v2', http=http)
 
+    strsplt = sys.argv[2][1:].split('/')
+    filename = strsplt[len(strsplt)-1]
+    strsplt = strsplt[:-1]
+    cur_dir_id = 'root';
+    
     try:
-        root = drive.about().get().execute()['rootFolderId']
-        str = sys.argv[2]
-        cur = root
-        strsplt = str[1:].split('/')
-        filename = strsplt[len(strsplt)-1]
+        for p in strsplt:
+            param = {'q': "title = '%s' and '%s' in parents" % (p, cur_dir_id), 'fields':'items'}
+            files = drive.files().list(**param).execute()
+            #file_list = drive.ListFile({'fields':'items','q': "title = '%s' and '%s' in parents" % (p, cur_dir_id)}).GetList()
+            if len(files['items']) == 0:
+                print "Directory not found"
+                sys.exit(404)
+            else:
+                cur_dir_id = files['items'][0]['id']
 
-        if len(strsplt) > 1:
-            for folder in strsplt:
-                param = {}
-                param['pageToken'] = cur
-                childrens = drive.children().list(folderId=cur).execute()
-                for item in childrens['items']:
-                    sitem = drive.files().get(fileId=item['id']).execute()
-                    if sitem["labels"]["trashed"] == False and sitem["mimeType"] == "application/vnd.google-apps.folder":
-                        if sitem["title"]==folder:
-                            cur = item['id']
-                            break
-
-            if drive.files().get(fileId=cur).execute()['title'] != strsplt[len(strsplt)-2]:
-                print "Directory not found!"
-                exit(2)
-
-        childrens = drive.children().list(folderId=cur).execute()
-        for item in childrens['items']:
-            sitem = drive.files().get(fileId=item['id']).execute()
-            if sitem['title'] == filename:
-                drive.files().delete(fileId=sitem['id']).execute()
-                drive.files().emptyTrash()
-                sys.exit(0)
+        param = {'q': "title = '%s' and '%s' in parents" % (filename, cur_dir_id), 'fields':'items'}
+        files = drive.files().list(**param).execute()
+        if len(files['items']) == 0:
+            print "File not found"
+            sys.exit(404)
+        else:
+            drive.files().delete(fileId=files['items'][0]['id']).execute()
+            #drive.files().emptyTrash()
     except errors.HttpError, e:
         #print 'Error: %s' % e
         try:
@@ -112,4 +105,4 @@ else:
             print 'HTTP Reason: %s' % e.resp.reason
             sys.exit(e.resp.status)
     
-    sys.exit(1)
+    sys.exit(0)

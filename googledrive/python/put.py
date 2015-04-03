@@ -75,10 +75,13 @@ else:
         resp, content = http.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
         credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
 
+    http = credentials.authorize(http)
+    drive = build('drive', 'v2', http=http)
+
     #root = drive.about().get().execute()['rootFolderId']
     #str = sys.argv[3]
     #cur = root
-    strsplt = sys.argv[3][1:].split('/')[:]
+    strsplt = sys.argv[3][1:].split('/')
     filename = strsplt[len(strsplt)-1]
     strsplt = strsplt[:-1]
     cur_dir_id = 'root';

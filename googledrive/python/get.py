@@ -41,7 +41,7 @@ else:
     REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
     SCOPES = ['https://www.googleapis.com/auth/drive']
 
-    #at = simplejson.loads(sys.argv[1])
+    at = simplejson.loads(sys.argv[1])
     #h = httplib2.Http()
     #d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
     #resp, content = h.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
@@ -64,33 +64,35 @@ else:
         resp, content = http.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
         credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
 
+    http = credentials.authorize(http)
+    drive = build('drive', 'v2', http=http)
+
     root = drive.about().get().execute()['rootFolderId']
     str = sys.argv[2]
     cur = root
     strsplt = str[1:].split('/')
     filename = strsplt[len(strsplt)-1]
+    strsplt = strsplt[:-1]
+    cur_dir_id = 'root'
 
-    if len(strsplt) > 1:
-        for folder in strsplt:
-            param = {}
-            param['pageToken'] = cur
-            childrens = drive.children().list(folderId=cur).execute()
-            for item in childrens['items']:
-                sitem = drive.files().get(fileId=item['id']).execute()
-                if sitem["labels"]["trashed"] == False and sitem["mimeType"] == "application/vnd.google-apps.folder":
-                    if sitem["title"]==folder:
-                        cur = item['id']
-                        break
+    try:
+        for p in strsplt:
+            param = {'q': "title = '%s' and '%s' in parents" % (p, cur_dir_id), 'fields':'items'}
+            files = drive.files().list(**param).execute()
+            #file_list = drive.ListFile({'fields':'items','q': "title = '%s' and '%s' in parents" % (p, cur_dir_id)}).GetList()
+            if len(files['items']) == 0:
+                print "Directory not found"
+                sys.exit(404)
+            else:
+                cur_dir_id = files['items'][0]['id']
 
-        if drive.files().get(fileId=cur).execute()['title'] != strsplt[len(strsplt)-2]:
-            print "Directory not found!"
-            exit(2)
-
-    childrens = drive.children().list(folderId=cur).execute()
-    for item in childrens['items']:
-        sitem = drive.files().get(fileId=item['id']).execute()
-        if sitem['title'] == filename:
-            file = drive.files().get(fileId=sitem['id']).execute()
+        param = {'q': "title = '%s' and '%s' in parents" % (filename, cur_dir_id), 'fields':'items'}
+        files = drive.files().list(**param).execute()
+        if len(files['items']) == 0:
+            print "File not found"
+            sys.exit(404)
+        else:
+            file = drive.files().get(fileId=files['items'][0]['id']).execute()
             download_url = file.get('downloadUrl')
             if download_url:
                 resp, content = drive._http.request(download_url)
@@ -100,7 +102,27 @@ else:
                     out.close()
                 else:
                     print 'An error occurred: %s' % resp
-                    sys.exit(1)
-            sys.exit(0)
+                    sys.exit(resp.status)
+            #drive.files().emptyTrash()
+    except errors.HttpError, e:
+        #print 'Error: %s' % e
+        try:
+            # Load Json body.
+            error = simplejson.loads(e.content)
+            print 'Error code: %d' % error.get('code')
+            print 'Error message: %d' % error.get('message')
+            sys.exit(error.get('code'))
+
+            # More error information can be retrieved with error.get('errors').
+        except TypeError:
+            # Could not load Json body.
+            print 'HTTP Status code: %d' % e.resp.status
+            print 'HTTP Reason: %s' % e.resp.reason
+            sys.exit(e.resp.status)
+        except ValueError:
+            # Could not load Json body.
+            print 'HTTP Status code: %d' % e.resp.status
+            print 'HTTP Reason: %s' % e.resp.reason
+            sys.exit(e.resp.status)
     
     sys.exit(1)

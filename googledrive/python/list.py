@@ -64,7 +64,10 @@ elif len(sys.argv) < 4 :
         d = {"grant_type": "refresh_token", "client_secret": CLIENT_SECRET, "client_id": CLIENT_ID, "refresh_token": at['refresh_token']}
         resp, content = http.request("https://accounts.google.com/o/oauth2/token", "POST", body=urlencode(d), headers={'Content-type' : 'application/x-www-form-urlencoded'})
         credentials = AccessTokenCredentials(json.loads(content)['access_token'], 'python-jbocd/1.0')
-	
+
+    http = credentials.authorize(http)
+    drive = build('drive', 'v2', http=http)
+
 	try:
 		list = drive.files().list(q='\'root\' in parents').execute()
 		# list = drive.files().list().execute()
