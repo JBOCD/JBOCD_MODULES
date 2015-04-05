@@ -14,7 +14,8 @@ from apiclient.http import MediaFileUpload
 from apiclient import errors
 
 class GAPI:
-	def __init__(self, json, working_dir):
+	def __init__(self, json):
+		self.dir_id = {}
 		self.REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob"
 		self.SCOPES = ['https://www.googleapis.com/auth/drive']
 
@@ -24,30 +25,50 @@ class GAPI:
 		self.CLIENT_SECRET = self.ConfigSectionMap("googledrive", Config)['clientsecret']
 		self.at = simplejson.loads(json)
 		credential_json = '{"_module": "oauth2client.client", "token_expiry": null, "access_token": null, "token_uri": null, "invalid": false, "token_response": null, "client_id": "%s", "id_token": null, "client_secret": "%s", "revoke_uri": null, "_class": "AccessTokenCredentials", "refresh_token": "%s", "user_agent": "python-jbocd/1.0"}' % (  self.CLIENT_ID, self.CLIENT_SECRET, self.at['refresh_token'])
-		
+	
 		#self.http = httplib2.Http()
 		self.requestNewCredential()
 		#authhttp = self.credentials.authorize(self.http)
 		#self.drive = build('drive', 'v2', http=authhttp)
 		drive = self.getNewDrive()
-
-		strsplt = working_dir[1:].split('/')
-		strsplt = strsplt[:]
 		self.working_dir = 'root';
 
-		for p in strsplt:
-			param = {'q': "title = '%s' and '%s' in parents" % (p, self.working_dir), 'fields':'items'}
-			files = drive.files().list(**param).execute()
-			if len(files['items']) == 0:
-				d = drive.files().insert(body={'title': p, "mimeType": "application/vnd.google-apps.folder", 'parents':[{'id': self.working_dir}]}).execute()
-				self.working_dir = d['id']
-				#print "Created Working DIR: ",=
-				#print d
-			else:
-				self.working_dir = files['items'][0]['id']
-				#print "Working DIR: "
-				#print files['items'][0]
-		#print "working_dir ID=", self.working_dir
+	def directoryID(self, working_dir):
+		drive = self.getNewDrive()
+		strsplt = working_dir[1:].split('/')
+		remote = strsplt[-1]
+		strsplt = strsplt[:-1]
+		wdir = "/"+"/".join(strsplt)
+		try:
+			self.working_dir = self.dir_id[wdir]
+		except KeyError:
+			for p in strsplt:
+				param = {'q': "title = '%s' and '%s' in parents" % (p, self.working_dir), 'fields':'items'}
+				files = drive.files().list(**param).execute()
+				if len(files['items']) == 0:
+					d = drive.files().insert(body={'title': p, "mimeType": "application/vnd.google-apps.folder", 'parents':[{'id': self.working_dir}]}).execute()
+					self.working_dir = d['id']
+					#print "Created Working DIR: ",=
+					#print d
+				else:
+					self.working_dir = files['items'][0]['id']
+					#print "Working DIR: "
+					#print files['items'][0]
+			self.dir_id[wdir] = self.working_dir
+			#print "working_dir ID=", self.working_dir
+		return remote
+
+	def getDir(self, working_dir):
+		drive = self.getNewDrive()
+		strsplt = working_dir[1:].split('/')
+		remote = strsplt[-1]
+		strsplt = strsplt[:-1]
+		wdir = "/"+"/".join(strsplt)
+		try:
+			self.working_dir = self.dir_id[wdir]
+		except KeyError:
+			return None
+		return remote
 
 	def getNewDrive(self):
 		http = httplib2.Http()
@@ -83,15 +104,16 @@ class GAPI:
 
 	def put(self, local, remote, op):
 		drive = self.getNewDrive()
+		filename = self.directoryID(remote)
 		body = {
-			'title': remote,
+			'title': filename,
 			'description': "Uploaded by python-jbocd",
 			'parents':[{'id': self.working_dir}]
 			#'mimeType' : mt
 		}
 		media_body = MediaFileUpload(local, 'application/octet-stream')
 		try:
-			param = {'q': "title = '%s' and '%s' in parents" % (remote, self.working_dir), 'fields':'items'}
+			param = {'q': "title = '%s' and '%s' in parents" % (filename, self.working_dir), 'fields':'items'}
 			files = drive.files().list(**param).execute()
 			if len(files['items']) > 0:
 				#print "Updated"
@@ -123,8 +145,12 @@ class GAPI:
 
 	def get(self, remote, local, op):
 		drive = self.getNewDrive()
+		filename = self.getDir(remote)
+		if filename == None:
+			print op, 404
+			return 0
 		try:
-			param = {'q': "title = '%s' and '%s' in parents" % (remote, self.working_dir), 'fields':'items'}
+			param = {'q': "title = '%s' and '%s' in parents" % (filename, self.working_dir), 'fields':'items'}
 			files = drive.files().list(**param).execute()
 			if len(files['items']) > 0:
 				#print "Updated"
@@ -167,35 +193,37 @@ class GAPI:
 
 	def delete(self, remote, op):
 		drive = self.getNewDrive()
-		try:
-			param = {'q': "title = '%s' and '%s' in parents" % (remote, self.working_dir), 'fields':'items'}
-			files = drive.files().list(**param).execute()
-			if len(files['items']) > 0:
-				#print "Updated"
-				drive.files().delete(fileId=files['items'][0]['id']).execute()
-			else:
-				#print 'Uploaded'
-				#print "File not found"
-				print op, 0
-		except errors.HttpError, e:
-			#print 'Error: %s' % e
+		filename = self.getDir(remote)
+		if filename == None:
+			print op, 404
+		else:
 			try:
-				# Load Json body.
-				error = simplejson.loads(e.content)
-				#print 'Error code: %d' % error.get('code')
-				#print 'Error message: %d' % error.get('message')
-				print op, error.get('code')
-				# More error information can be retrieved with error.get('errors').
-			except TypeError:
-				# Could not load Json body.
-				#print 'HTTP Status code: %d' % e.resp.status
-				#print 'HTTP Reason: %s' % e.resp.reason
-				print op, e.resp.status
-			except ValueError:
-				# Could not load Json body.
-				#print 'HTTP Status code: %d' % e.resp.status
-				#print 'HTTP Reason: %s' % e.resp.reason
-				print op, e.resp.status
-			return 0
-		print op, 0
+				param = {'q': "title = '%s' and '%s' in parents" % (filename, self.working_dir), 'fields':'items'}
+				files = drive.files().list(**param).execute()
+				if len(files['items']) > 0:
+					#print "Updated"
+					drive.files().delete(fileId=files['items'][0]['id']).execute()
+					#print 'Uploaded'
+					#print "File not found"
+				print op, 0
+			except errors.HttpError, e:
+				#print 'Error: %s' % e
+				try:
+					# Load Json body.
+					error = simplejson.loads(e.content)
+					#print 'Error code: %d' % error.get('code')
+					#print 'Error message: %d' % error.get('message')
+					print op, error.get('code')
+					# More error information can be retrieved with error.get('errors').
+				except TypeError:
+					# Could not load Json body.
+					#print 'HTTP Status code: %d' % e.resp.status
+					#print 'HTTP Reason: %s' % e.resp.reason
+					print op, e.resp.status
+				except ValueError:
+					# Could not load Json body.
+					#print 'HTTP Status code: %d' % e.resp.status
+					#print 'HTTP Reason: %s' % e.resp.reason
+					print op, e.resp.status
+				return 0
 

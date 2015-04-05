@@ -1,7 +1,7 @@
 from dropboxapi import DropboxAPI
 import sys,json,thread
 
-gd = DropboxAPI(sys.argv[1], sys.argv[2])
+gd = DropboxAPI(sys.argv[1])
 
 userinput = raw_input()
 while userinput:

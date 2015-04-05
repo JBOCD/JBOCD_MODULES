@@ -4,7 +4,7 @@ import dropbox
 import ConfigParser
 
 class DropboxAPI:
-	def __init__(self, json, working_dir):
+	def __init__(self, json):
 		Config = ConfigParser.ConfigParser()
 		Config.read("/var/JBOCD/module/dropbox/config.ini")
 		# Get your app key and secret from the Dropbox developer website
@@ -12,13 +12,6 @@ class DropboxAPI:
 		app_secret = self.ConfigSectionMap("dropbox", Config)['appsecret']
 
 		self.drop = dropbox.client.DropboxClient(json)
-		self.working_dir = working_dir;
-
-		try:
-			self.drop.file_create_folder(self.working_dir)
-		except dropbox.rest.ErrorResponse as e:
-			pass
-		#print "working_dir=", self.working_dir
 		
 	def ConfigSectionMap(self, section, Config):
 		dict1 = {}
@@ -36,7 +29,7 @@ class DropboxAPI:
 	def put(self, local, remote, op):
 		try:
 			f = open(local, 'rb')
-			response = self.drop.put_file(self.working_dir + '/' + remote, f, True)
+			response = self.drop.put_file(remote, f, True)
 		except dropbox.rest.ErrorResponse as e:
 			#print "Put Error: ", e.error_msg
 			#print "\tStatus: ", e.status
@@ -48,7 +41,7 @@ class DropboxAPI:
 
 	def get(self, remote, local, op):
 		try:
-			f, meta = self.drop.get_file_and_metadata(self.working_dir + '/' + remote)
+			f, meta = self.drop.get_file_and_metadata(remote)
 			out = open(local, 'wb')
 			out.write(f.read())
 			out.close()
@@ -60,7 +53,7 @@ class DropboxAPI:
 
 	def delete(self, remote, op):
 		try:
-			response = self.drop.file_delete(self.working_dir + '/' + remote)
+			response = self.drop.file_delete(remote)
 		except dropbox.rest.ErrorResponse as e:
 			#print "Delete Error: ", e.error_msg
 			#print "\tStatus: ", e.status
