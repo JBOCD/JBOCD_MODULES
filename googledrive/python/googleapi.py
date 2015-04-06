@@ -42,6 +42,7 @@ class GAPI:
 		try:
 			self.working_dir = self.dir_id[wdir]
 		except KeyError:
+			self.working_dir = 'root'
 			for p in strsplt:
 				param = {'q': "title = '%s' and '%s' in parents" % (p, self.working_dir), 'fields':'items'}
 				files = drive.files().list(**param).execute()
