@@ -20,9 +20,9 @@ class DropboxAPI:
 			try:
 				dict1[option] = Config.get(section, option)
 				if dict1[option] == -1:
-					DebugPrint("skip: %s" % option)
+					#DebugPrint("skip: %s" % option)
 			except:
-				print("exception on %s!" % option)
+				#print("exception on %s!" % option)
 				dict1[option] = None
 		return dict1
 
@@ -36,8 +36,10 @@ class DropboxAPI:
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
 			print op, e.status
+			sys.stdout.flush()
 			return 0
 		print op, 0
+		sys.stdout.flush()
 
 	def get(self, remote, local, op):
 		try:
@@ -48,8 +50,10 @@ class DropboxAPI:
 		except dropbox.rest.ErrorResponse as e:
 			#print "Put Error: ", e.error_msg
 			print op, e.status
+			sys.stdout.flush()
 			return 0
 		print op, 0
+		sys.stdout.flush()
 
 	def delete(self, remote, op):
 		try:
@@ -60,5 +64,7 @@ class DropboxAPI:
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
 			print op, e.status
+			sys.stdout.flush()
 			return 0
 		print op, 0
+		sys.stdout.flush()

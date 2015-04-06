@@ -129,25 +129,30 @@ class GAPI:
 				#print 'Error code: %d' % error.get('code')
 				#print 'Error message: %d' % error.get('message')
 				print op, error.get('code')
+				sys.stdout.flush()
 				# More error information can be retrieved with error.get('errors').
 			except TypeError:
 				# Could not load Json body.
 				#print 'HTTP Status code: %d' % e.resp.status
 				#print 'HTTP Reason: %s' % e.resp.reason
 				print op, e.resp.status
+				sys.stdout.flush()
 			except ValueError:
 				# Could not load Json body.
 				#print 'HTTP Status code: %d' % e.resp.status
 				#print 'HTTP Reason: %s' % e.resp.reason
 				print op, e.resp.status
+				sys.stdout.flush()
 			return 0
-		print op, 0
+		print >> sys.stdout, op, 0
+		sys.stdout.flush()
 
 	def get(self, remote, local, op):
 		drive = self.getNewDrive()
 		filename = self.getDir(remote)
 		if filename == None:
 			print op, 404
+			sys.stdout.flush()
 			return 0
 		try:
 			param = {'q': "title = '%s' and '%s' in parents" % (filename, self.working_dir), 'fields':'items'}
@@ -165,10 +170,13 @@ class GAPI:
 					else:
 						#print 'An error occurred: %s' % resp
 						print op, 500
+						sys.stdout.flush()
 			else:
 				#print 'Uploaded'
 				#print "File not found"
 				print op, 404
+				sys.stdout.flush()
+
 		except errors.HttpError, e:
 			#print 'Error: %s' % e
 			try:
@@ -177,25 +185,30 @@ class GAPI:
 				#print 'Error code: %d' % error.get('code')
 				#print 'Error message: %d' % error.get('message')
 				print op, error.get('code')
+				sys.stdout.flush()
 				# More error information can be retrieved with error.get('errors').
 			except TypeError:
 				# Could not load Json body.
 				#print 'HTTP Status code: %d' % e.resp.status
 				#print 'HTTP Reason: %s' % e.resp.reason
 				print op, e.resp.status
+				sys.stdout.flush()
 			except ValueError:
 				# Could not load Json body.
 				#print 'HTTP Status code: %d' % e.resp.status
 				#print 'HTTP Reason: %s' % e.resp.reason
 				print op, e.resp.status
+				sys.stdout.flush()
 			return 0
 		print op, 0
+		sys.stdout.flush()
 
 	def delete(self, remote, op):
 		drive = self.getNewDrive()
 		filename = self.getDir(remote)
 		if filename == None:
 			print op, 404
+			sys.stdout.flush()
 		else:
 			try:
 				param = {'q': "title = '%s' and '%s' in parents" % (filename, self.working_dir), 'fields':'items'}
@@ -206,6 +219,7 @@ class GAPI:
 					#print 'Uploaded'
 					#print "File not found"
 				print op, 0
+				sys.stdout.flush()
 			except errors.HttpError, e:
 				#print 'Error: %s' % e
 				try:
@@ -214,16 +228,19 @@ class GAPI:
 					#print 'Error code: %d' % error.get('code')
 					#print 'Error message: %d' % error.get('message')
 					print op, error.get('code')
+					sys.stdout.flush()
 					# More error information can be retrieved with error.get('errors').
 				except TypeError:
 					# Could not load Json body.
 					#print 'HTTP Status code: %d' % e.resp.status
 					#print 'HTTP Reason: %s' % e.resp.reason
 					print op, e.resp.status
+					sys.stdout.flush()
 				except ValueError:
 					# Could not load Json body.
 					#print 'HTTP Status code: %d' % e.resp.status
 					#print 'HTTP Reason: %s' % e.resp.reason
 					print op, e.resp.status
+					sys.stdout.flush()
 				return 0
 
