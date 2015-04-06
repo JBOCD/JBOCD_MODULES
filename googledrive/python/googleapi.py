@@ -47,13 +47,10 @@ class GAPI:
 		with self.lock:
 			try:
 				working_dir = self.dir_id[wdir]
-				print >> sys.stderr, "INFO: ", "%s in DICT returned %s" % (wdir, working_dir)
 			except KeyError:
 				try:
-					print >> sys.stderr, "INFO: ", "%s not in DICT" % wdir
 					working_dir = 'root'
 					for p in strsplt:
-						print >> sys.stderr, "INFO: ", "Loop check %s in %s" % (p, working_dir)
 						param = {'q': "title = '%s' and '%s' in parents" % (p, working_dir), 'fields':'items'}
 						files = drive.files().list(**param).execute()
 						if len(files['items']) == 0:
@@ -66,7 +63,6 @@ class GAPI:
 							#print "Working DIR: "
 							#print files['items'][0]
 					self.dir_id[wdir] = working_dir
-					print >> sys.stderr, "%s saved DICT = %s" % (wdir, working_dir)
 					#print "working_dir ID=", self.working_dir
 				except errors.HttpError, e:
 					#print 'Error: %s' % e
@@ -92,17 +88,57 @@ class GAPI:
 						sys.stdout.flush()
 		return remote, working_dir
 
-	def getDir(self, working_dir):
+	def getDir(self, wd):
 		drive = self.getNewDrive()
-		strsplt = working_dir[1:].split('/')
+		strsplt = wd[1:].split('/')
 		remote = strsplt[-1]
 		strsplt = strsplt[:-1]
 		wdir = "/"+"/".join(strsplt)
-		try:
-			self.working_dir = self.dir_id[wdir]
-		except KeyError:
-			return None
-		return remote
+		working_dir = 'root'
+		with self.lock:
+			try:
+				working_dir = self.dir_id[wdir]
+			except KeyError:
+				try:
+					working_dir = 'root'
+					for p in strsplt:
+						param = {'q': "title = '%s' and '%s' in parents" % (p, working_dir), 'fields':'items'}
+						files = drive.files().list(**param).execute()
+						if len(files['items']) == 0:
+							working_dir = d['id']
+							status = 404
+							return remote, working_dir, status
+							#print "Created Working DIR: ",=
+							#print d
+						else:
+							working_dir = files['items'][0]['id']
+							#print "Working DIR: "
+							#print files['items'][0]
+					self.dir_id[wdir] = working_dir
+					#print "working_dir ID=", self.working_dir
+				except errors.HttpError, e:
+					#print 'Error: %s' % e
+					try:
+						# Load Json body.
+						error = json.loads(e.content)
+						#print 'Error code: %d' % error.get('code')
+						#print 'Error message: %d' % error.get('message')
+						print >> sys.stderr, error['error']['code']
+						sys.stdout.flush()
+						# More error information can be retrieved with error.get('errors').
+					except TypeError:
+						# Could not load Json body.
+						#print 'HTTP Status code: %d' % e.resp.status
+						#print 'HTTP Reason: %s' % e.resp.reason
+						print >> sys.stderr, e.resp.status
+						sys.stdout.flush()
+					except ValueError:
+						# Could not load Json body.
+						#print 'HTTP Status code: %d' % e.resp.status
+						#print 'HTTP Reason: %s' % e.resp.reason
+						print >> sys.stderr, e.resp.status
+						sys.stdout.flush()
+		return remote, working_dir, None
 
 	def getNewDrive(self):
 		http = httplib2.Http()
@@ -184,13 +220,16 @@ class GAPI:
 
 	def get(self, remote, local, op):
 		drive = self.getNewDrive()
-		filename = self.getDir(remote)
+		filename, working_dir, status = self.getDir(remote)
+		if status != None:
+			print op, 404
+			return 0
 		if filename == None:
 			print op, 404
 			sys.stdout.flush()
 			return 0
 		try:
-			param = {'q': "title = '%s' and '%s' in parents" % (filename, self.working_dir), 'fields':'items'}
+			param = {'q': "title = '%s' and '%s' in parents" % (filename, working_dir), 'fields':'items'}
 			files = drive.files().list(**param).execute()
 			if len(files['items']) > 0:
 				#print "Updated"
@@ -240,23 +279,30 @@ class GAPI:
 
 	def delete(self, remote, op):
 		drive = self.getNewDrive()
-		filename = self.getDir(remote)
-		if filename == None:
+		filename, working_dir, status = self.getDir(remote)
+		if filename == None or status != None:
 			print op, 404
 			sys.stdout.flush()
 		else:
 			try:
-				param = {'q': "title = '%s' and '%s' in parents" % (filename, self.working_dir), 'fields':'items'}
+				param = {'q': "title = '%s' and '%s' in parents" % (filename, working_dir), 'fields':'items'}
 				files = drive.files().list(**param).execute()
 				if len(files['items']) > 0:
 					#print "Updated"
 					drive.files().delete(fileId=files['items'][0]['id']).execute()
+					print op, 0
+					print >> sys.stderr, "DEL"
+					sys.stdout.flush()
 					#print 'Uploaded'
 					#print "File not found"
-				print op, 0
-				sys.stdout.flush()
+				else:
+					print op, 404
+					sys.stdout.flush()
+				return 0
+				
 			except errors.HttpError, e:
 				#print 'Error: %s' % e
+				print >> sys.stderr, "ERRORIN"
 				try:
 					# Load Json body.
 					error = json.loads(e.content)
