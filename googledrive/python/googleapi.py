@@ -71,18 +71,18 @@ class GAPI:
 						error = json.loads(e.content)
 						#print 'Error code: %d' % error.get('code')
 						#print 'Error message: %d' % error.get('message')
-						#print >> sys.stderr, error['error']['code']
+						print >> sys.stderr, error['error']['code']
 						# More error information can be retrieved with error.get('errors').
 					except TypeError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						#print >> sys.stderr, e.resp.status
+						print >> sys.stderr, e.resp.status
 					except ValueError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						#print >> sys.stderr, e.resp.status
+						print >> sys.stderr, e.resp.status
 		return remote, working_dir
 
 	def getDir(self, wd):
@@ -120,18 +120,18 @@ class GAPI:
 						error = json.loads(e.content)
 						#print 'Error code: %d' % error.get('code')
 						#print 'Error message: %d' % error.get('message')
-						#print >> sys.stderr, error['error']['code']
+						print >> sys.stderr, error['error']['code']
 						# More error information can be retrieved with error.get('errors').
 					except TypeError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						#print >> sys.stderr, e.resp.status
+						print >> sys.stderr, e.resp.status
 					except ValueError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						#print >> sys.stderr, e.resp.status
+						print >> sys.stderr, e.resp.status
 		return remote, working_dir, None
 
 	def getNewDrive(self):
