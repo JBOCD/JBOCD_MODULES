@@ -71,21 +71,18 @@ class GAPI:
 						error = json.loads(e.content)
 						#print 'Error code: %d' % error.get('code')
 						#print 'Error message: %d' % error.get('message')
-						print >> sys.stderr, error['error']['code']
-						sys.stdout.flush()
+						#print >> sys.stderr, error['error']['code']
 						# More error information can be retrieved with error.get('errors').
 					except TypeError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						print >> sys.stderr, e.resp.status
-						sys.stdout.flush()
+						#print >> sys.stderr, e.resp.status
 					except ValueError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						print >> sys.stderr, e.resp.status
-						sys.stdout.flush()
+						#print >> sys.stderr, e.resp.status
 		return remote, working_dir
 
 	def getDir(self, wd):
@@ -123,21 +120,18 @@ class GAPI:
 						error = json.loads(e.content)
 						#print 'Error code: %d' % error.get('code')
 						#print 'Error message: %d' % error.get('message')
-						print >> sys.stderr, error['error']['code']
-						sys.stdout.flush()
+						#print >> sys.stderr, error['error']['code']
 						# More error information can be retrieved with error.get('errors').
 					except TypeError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						print >> sys.stderr, e.resp.status
-						sys.stdout.flush()
+						#print >> sys.stderr, e.resp.status
 					except ValueError:
 						# Could not load Json body.
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
-						print >> sys.stderr, e.resp.status
-						sys.stdout.flush()
+						#print >> sys.stderr, e.resp.status
 		return remote, working_dir, None
 
 	def getNewDrive(self):
@@ -198,7 +192,7 @@ class GAPI:
 				error = json.loads(e.content)
 				#print 'Error code: %d' % error.get('code')
 				#print 'Error message: %d' % error.get('message')
-				print >> sys.stderr, error.get('message')
+				#print >> sys.stderr, error.get('message')
 				print op, error['error']['code']
 				sys.stdout.flush()
 				# More error information can be retrieved with error.get('errors').
@@ -291,7 +285,6 @@ class GAPI:
 					#print "Updated"
 					drive.files().delete(fileId=files['items'][0]['id']).execute()
 					print op, 0
-					print >> sys.stderr, "DEL"
 					sys.stdout.flush()
 					#print 'Uploaded'
 					#print "File not found"
@@ -302,7 +295,6 @@ class GAPI:
 				
 			except errors.HttpError, e:
 				#print 'Error: %s' % e
-				print >> sys.stderr, "ERRORIN"
 				try:
 					# Load Json body.
 					error = json.loads(e.content)
