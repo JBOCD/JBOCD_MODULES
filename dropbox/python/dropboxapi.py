@@ -30,15 +30,14 @@ class DropboxAPI:
 		try:
 			f = open(local, 'rb')
 			response = self.drop.put_file(remote, f, True)
+			print op, 0
 		except dropbox.rest.ErrorResponse as e:
 			#print "Put Error: ", e.error_msg
 			#print "\tStatus: ", e.status
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
 			print op, e.status
-			sys.stdout.flush()
-			return 0
-		print op, 0
+		print "\n"
 		sys.stdout.flush()
 
 	def get(self, remote, local, op):
@@ -47,24 +46,22 @@ class DropboxAPI:
 			out = open(local, 'wb')
 			out.write(f.read())
 			out.close()
+			print op, 0
 		except dropbox.rest.ErrorResponse as e:
 			#print "Put Error: ", e.error_msg
 			print op, e.status
-			sys.stdout.flush()
-			return 0
-		print op, 0
+		print "\n"
 		sys.stdout.flush()
 
 	def delete(self, remote, op):
 		try:
 			response = self.drop.file_delete(remote)
+			print op, 0
 		except dropbox.rest.ErrorResponse as e:
 			#print "Delete Error: ", e.error_msg
 			#print "\tStatus: ", e.status
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
 			print op, e.status
-			sys.stdout.flush()
-			return 0
-		print op, 0
+		print "\n"
 		sys.stdout.flush()
