@@ -139,5 +139,39 @@ class Dropbox {
 		return true;
 	}
 
+	public function getDrivesInfo($id){
+		$result = $this->db->query('SELECT * FROM `dropbox` WHERE `id` = ?', array($id));
+		try{
+			$row = $result->row();
+			$dbxClient = new dbx\Client($row->key, "PCL1401");
+			$accountInfo = $dbxClient->getAccountInfo();
+			return array(
+				'id'=>$id,
+				'quota'=>round($accountInfo['quota_info']['quota'] / 1073741824, 2, PHP_ROUND_HALF_DOWN), 
+				'available'=>round(($accountInfo['quota_info']['quota'] - $accountInfo['quota_info']['normal'] - $accountInfo['quota_info']['shared']) / 1073741824,2,PHP_ROUND_HALF_DOWN), 
+				'name'=>$row->name,
+				'status'=>true);
+		}catch(Exception $e){
+			//$this->dise($row['id']);
+			return array(
+				'id'=>$id,
+				'quota'=>0, 
+				'available'=>0, 
+				'name'=>$row->name,
+				'status'=>false);;
+		}
+	}
+
+	public function rmdir($dir, $id){
+		try{
+			$result = $this->db->query('SELECT * FROM `dropbox` WHERE `id` = ?', array($id));
+			$row = $result->row();
+			$dbxClient = new dbx\Client($row->key, "PCL1401");
+			$dbxClient->delete($dir);
+		}catch(Exception $e){
+			return false;
+		}
+	}
+
 }
 ?>
