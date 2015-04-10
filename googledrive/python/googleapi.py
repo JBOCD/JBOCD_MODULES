@@ -36,18 +36,18 @@ class GAPI:
 		self.lock = thread.allocate_lock()
 
 	def directoryID(self, wd):
-		#print >> sys.stderr, "INFO: ", "Check directory"
-		drive = self.getNewDrive()
 		strsplt = wd[1:].split('/')
 		remote = strsplt[-1]
 		strsplt = strsplt[:-1]
 		wdir = "/"+"/".join(strsplt)
-		#print >> sys.stderr, "INFO: ", "Checking %s" % wdir
-		working_dir = 'root'
-		with self.lock:
-			try:
-				working_dir = self.dir_id[wdir]
-			except KeyError:
+		try:
+			working_dir = self.dir_id[wdir]
+		except KeyError:
+			#print >> sys.stderr, "INFO: ", "Check directory"
+			drive = self.getNewDrive()
+			#print >> sys.stderr, "INFO: ", "Checking %s" % wdir
+			working_dir = 'root'
+			with self.lock:
 				try:
 					working_dir = 'root'
 					for p in strsplt:
