@@ -37,6 +37,9 @@ class DropboxAPI:
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
 			print '{} {}\n'.format(op, e.status)
+		except:
+			print >> sys.stderr, 'Handle Unknown error (ReadTimeoutError).\n'
+			print '{} {}\n'.format(op, 1)
 		sys.stdout.flush()
 
 	def get(self, remote, local, op):
@@ -49,6 +52,8 @@ class DropboxAPI:
 		except dropbox.rest.ErrorResponse as e:
 			#print "Put Error: ", e.error_msg
 			print '{} {}\n'.format(op, e.status)
+		except:
+			print '{} {}\n'.format(op, 1)
 		sys.stdout.flush()
 
 	def delete(self, remote, op):
@@ -61,4 +66,6 @@ class DropboxAPI:
 			#print "\tReason: ", e.reason
 			#print "\tuser_error_msg: ", e.user_error_msg
 			print '{} {}\n'.format(op, e.status)
+		except:
+			print '{} {}\n'.format(op, 1)
 		sys.stdout.flush()

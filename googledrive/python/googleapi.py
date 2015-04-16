@@ -34,6 +34,7 @@ class GAPI:
 		drive = self.getNewDrive()
 		self.working_dir = 'root'
 		self.lock = thread.allocate_lock()
+		self.authLock = thread.allocate_lock()
 
 	def directoryID(self, wd):
 		strsplt = wd[1:].split('/')
@@ -83,6 +84,10 @@ class GAPI:
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
 						print >> sys.stderr, e.resp.status
+					except:
+						print >> sys.stderr, 'Unhandled Error: googleapi.py line:88'
+				except:
+					print >> sys.stderr, 'Unhandled Error: googleapi.py line:90'
 		return remote, working_dir
 
 	def getDir(self, wd):
@@ -131,18 +136,35 @@ class GAPI:
 						#print 'HTTP Status code: %d' % e.resp.status
 						#print 'HTTP Reason: %s' % e.resp.reason
 						print >> sys.stderr, e.resp.status
+					except:
+						print >> sys.stderr, 'Unhandled Error: googleapi.py line:140'
+				except:
+					print >> sys.stderr, 'Unhandled Error: googleapi.py line:142'
+			except:
+				print >> sys.stderr, 'Unhandled Error: googleapi.py line:144'
+
 		return remote, working_dir, None
 
 	def getNewDrive(self):
+		result = None
 		http = httplib2.Http()
 		authhttp = self.credentials.authorize(http)
-		return build('drive', 'v2', http=authhttp)
+		while result == None:
+			try:
+				result = build('drive', 'v2', http=authhttp)
+			except:
+				result = None
+		return result
 
 	def checkCredential(self):
 		try:
-			http = httplib2.Http()
-			self.credentials.refresh(http)
+			with self.authLock:
+				http = httplib2.Http()
+				self.credentials.refresh(http)
 		except oauth2client.client.AccessTokenCredentialsError:
+			return False
+		except:
+			print >> sys.stderr, 'Unhandled Error: googleapi.py line:167'
 			return False
 		return True
 
@@ -182,7 +204,9 @@ class GAPI:
 			except errors.HttpError, e:
 				if e.resp.status == 401 and self.checkCredential() == False:
 					self.requestNewCredential()
-					files = drive.files().list(**param).execute()
+				files = drive.files().list(**param).execute()
+			except:
+				print >> sys.stderr, 'Unhandled Error: googleapi.py line:209\n'
 			
 			if len(files['items']) > 0:
 				#print "Updated"
@@ -211,6 +235,13 @@ class GAPI:
 				#print 'HTTP Status code: %d' % e.resp.status
 				#print 'HTTP Reason: %s' % e.resp.reason
 				print '{} {}\n'.format(op, e.resp.status)
+			except:
+				print >> sys.stderr, 'Unhandled Error: googleapi.py line:239\n'
+				print '{} {}\n'.format(op, 1)
+		except:
+			print >> sys.stderr, 'Unhandled Error: googleapi.py line:241\n'
+			print '{} {}\n'.format(op, 1)
+
 		sys.stdout.flush()
 
 	def get(self, remote, local, op):
@@ -228,8 +259,11 @@ class GAPI:
 				except errors.HttpError, e:
 					if e.resp.status == 401 and self.checkCredential() == False:
 						self.requestNewCredential()
-						files = drive.files().list(**param).execute()
-			
+					files = drive.files().list(**param).execute()
+				except:
+					print >> sys.stderr, 'Unhandled Error: googleapi.py line:262\n'
+					files = drive.files().list(**param).execute()
+
 				if len(files['items']) > 0:
 					#print "Updated"
 					file = drive.files().get(fileId=files['items'][0]['id']).execute()
@@ -248,7 +282,6 @@ class GAPI:
 						#print 'An error occurred: %s' % resp
 						print '{} {}\n'.format(op, 500)
 				else:
-					#print 'Uploaded'
 					#print "File not found"
 					print '{} {}\n'.format(op, 404)
 	
@@ -271,6 +304,12 @@ class GAPI:
 					#print 'HTTP Status code: %d' % e.resp.status
 					#print 'HTTP Reason: %s' % e.resp.reason
 					print '{} {}\n'.format(op, e.resp.status)
+				except:
+					print >> sys.stderr, 'Unhandled Error: googleapi.py line:306'
+					print '{} {}\n'.format(op, 1)
+			except:
+				print >> sys.stderr, 'Unhandled Error: googleapi.py line:308'
+				print '{} {}\n'.format(op, 1)
 		sys.stdout.flush()
 
 	def delete(self, remote, op):
@@ -286,7 +325,9 @@ class GAPI:
 				except errors.HttpError, e:
 					if e.resp.status == 401 and self.checkCredential() == False:
 						self.requestNewCredential()
-						files = drive.files().list(**param).execute()
+					files = drive.files().list(**param).execute()
+				except:
+					print >> sys.stderr, 'Unhandled Error: googleapi.py line:327'
 			
 				if len(files['items']) > 0:
 					#print "Updated"
@@ -316,4 +357,10 @@ class GAPI:
 					#print 'HTTP Status code: %d' % e.resp.status
 					#print 'HTTP Reason: %s' % e.resp.reason
 					print '{} {}\n'.format(op, e.resp.status)
+				except:
+					print >> sys.stderr, 'Unhandled Error: googleapi.py line:358'
+					print '{} {}\n'.format(op, 1)
+			except:
+				print >> sys.stderr, 'Unhandled Error: googleapi.py line:360'
+				print '{} {}\n'.format(op, 1)
 		sys.stdout.flush()
