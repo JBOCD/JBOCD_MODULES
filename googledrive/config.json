@@ -3,7 +3,7 @@
 	"name":"Google Drive",
 	"icon":"fa-googledrive",
 	"isFA":1,
-	"version":1,
+	"version":1.1,
 	"SQL":
 		[
 			"DROP TABLE IF EXISTS `googledrive`",
@@ -11,6 +11,11 @@
 			"CREATE TABLE IF NOT EXISTS `googledrive` (`id` int(11) NOT NULL,`key` text,`userid` varchar(255) DEFAULT NULL,`status` int(11) DEFAULT NULL, PRIMARY KEY (`id`), timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,UNIQUE KEY `userid` (`userid`)) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=13 ;"
 		],
 	"script":
+		[
+			"g++ -std=c++0x -c -Wall -fpic -o cpp_driver/GoogleDrive.o cpp_driver/GoogleDrive.cpp",
+			"g++ -std=c++0x -shared -o /usr/local/lib/JBOCD/libgoogledrive.so cpp_driver/GoogleDrive.o"
+		],
+	"sudo_script":
 		[
 			"pip install --upgrade google-api-python-client"
 		]
