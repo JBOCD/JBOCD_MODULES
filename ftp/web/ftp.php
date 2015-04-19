@@ -57,7 +57,7 @@ class Ftp {
 			'form'=>array(
 				array(
 					'type'=>'checkbox',
-					'name'=>'isSecure',
+					'name'=>'secure',
 					'value'=>true,
 					'description'=>'Use Secure Connection?'
 				),
@@ -165,11 +165,11 @@ class Ftp {
 
 	public function rmdir($dir, $id){
 		try{
-			$result = $this->db->query('SELECT * FROM `dropbox` WHERE `id` = ?', array($id));
+			$result = $this->db->query('SELECT * FROM `ftp` WHERE `id` = ?', array($id));
 			$row = $result->row();
 			$info = json_decode($row->key);
-			$ftp = $row->secure ? ftp_ssl_connect($row->host, $row->port) : ftp_connect($row->host, $row->port);
-			ftp_login($ftp, $row->user, $row->pass);
+			$ftp = $info->secure ? ftp_ssl_connect($info->host, $info->port) : ftp_connect($info->host, $info->port);
+			ftp_login($ftp, $info->user, $info->pass);
 			ftp_delete($ftp, $dir);
 			ftp_quit($ftp);
 		}catch(Exception $e){
