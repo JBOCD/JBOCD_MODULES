@@ -1,0 +1,19 @@
+{
+	"dir":"ftp",
+	"name":"FTP",
+	"icon":"fa-ftp",
+	"isFA":1,
+	"version":1.2,
+	"SQL":
+		[
+			"DROP TABLE IF EXISTS `ftp`",
+			"DELETE FROM `clouddrive` WHERE `lid` IN (SELECT `id` FROM `libraries` WHERE `dir` = 'ftp')",
+			"CREATE TABLE IF NOT EXISTS `ftp` ( `id` int(11) NOT NULL, `key` text, PRIMARY KEY (`id`) ) ENGINE=InnoDB DEFAULT CHARSET=utf8"
+		],
+	"script":
+		[
+			"g++ -std=c++0x -c -Wall -fpic -o cpp_driver/FTP.o cpp_driver/FTP.cpp",
+			"g++ -std=c++0x -shared -o /usr/local/lib/JBOCD/libftp.so cpp_driver/FTP.o"
+		],
+	"sudo_script":[]
+}
